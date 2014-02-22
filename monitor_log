@@ -1,0 +1,11 @@
+#!/bin/bash
+
+function process_line() {
+}
+
+log_dir=../logs/
+
+tail -f $log_dir/latest.log | while read l
+do
+    process_line "$l"
+done
