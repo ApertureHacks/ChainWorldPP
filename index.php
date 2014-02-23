@@ -2,8 +2,8 @@
 
 if($_POST["from"])
 {
-    $from = $_POST["from"];
-    $handle = $_POST["text"];
+    $from = $_POST["subject"];
+    $handle = strtolower($_POST["text"]);
 
     $db = new SQLite3('chaincraft.db');
 
