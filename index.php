@@ -7,7 +7,7 @@ if($_POST["from"])
 
     $db = new SQLite3('chaincraft.db');
 
-    $db->exec("INSERT INTO user (email, handle) VALUES ($from, $handle)");
+    $db->exec("INSERT INTO user (email, handle) VALUES (\"$from\", \"$handle\")");
 }
 
 ?>
