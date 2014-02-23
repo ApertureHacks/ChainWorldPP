@@ -1,11 +1,28 @@
 #!/bin/bash
 
+minecraft_dir=../
+curr_user=`tail -n1 $minecraft_dir/white-list.txt`
+
 function process_line() {
+    local user_end=0
+    # Detect if user has disconnected
+    if [ "`echo $l | grep \"$curr_user left the game\"`" != "" ]
+    then
+        local user_end=1
+    fi
+
+    #Detect if the user died
+    for text in "`cat death_messages`"
+    do
+        if [ "`echo $l | grep "$text"`" != "" ]
+        then
+            local user_end=1
+            break
+        fi
+    done
 }
 
-log_dir=../logs/
-
-tail -f $log_dir/latest.log | while read l
+tail -f $minecraft_dir/logs/latest.log | while read l
 do
     process_line "$l"
 done
