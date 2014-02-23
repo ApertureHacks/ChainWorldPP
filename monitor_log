@@ -3,6 +3,7 @@
 minecraft_dir=../
 curr_user=`tail -n1 $minecraft_dir/white-list.txt`
 fd="$minecraft_dir/command_input"
+db='/tmp/chaincraft.db'
 
 function process_line() {
     local user_end=0
@@ -30,7 +31,17 @@ function process_line() {
         echo "whitelist remove $curr_user" > $fd
         echo "kick $curr_user Your turn is over. Thanks for playing" > $fd
 
-        #TODO: Get a new player
+        local nextUser = $(sqlite3 "$db" "select * from users limit 1")
+        if test -z "$nextUser"; then return; fi
+
+        local userName = $(echo "$nextUser" | cut -d'|' -f3)
+        local userEmail = $(echo "$nextUser" | cut -d'|' -f2)
+
+        echo "whitelist add $userId" > $fd
+        sqlite3 "$db" "delete from users where handle=\"$userName\""
+        sendmail -fnoreply@linode.jmatthews.us "$userEmail" << __ENDEMAIL__
+Your turn to play! Connect to linode.jmatthews.us:25565 to play chaincraft.
+__ENDEMAIL__
     fi
 }
 
