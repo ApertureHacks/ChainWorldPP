@@ -4,12 +4,19 @@ minecraft_dir=../
 curr_user=`tail -n1 $minecraft_dir/white-list.txt`
 fd="$minecraft_dir/command_input"
 db='/tmp/chaincraft.db'
+spectator=""
 
 function process_line() {
     local user_end=0
-    echo $1
+
+    if echo $1 | grep -i "$curr_user joined the game"
+    then
+        echo "tp $spectator $curr_user" > $fd
+        return
+    fi
+
     # Detect if user has disconnected
-    if [ "`echo $1 | grep -i \"$curr_user left the game\"`" != "" ]
+    if echo $1 | grep -i \"$curr_user left the game\"
     then
         local user_end=1
     fi
@@ -17,9 +24,8 @@ function process_line() {
     #Detect if the user died
     while read text
     do
-        if [ "`echo $1 | grep -i "$curr_user $text"`" != "" ]
+        if echo $1 | grep -i "$curr_user $text"
         then
-            echo "dead"
             local user_end=1
             break
         fi
