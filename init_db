@@ -1,0 +1,6 @@
+#!/bin/bash
+`which sqlite3` chaincraft.db "CREATE TABLE IF NOT EXISTS users (
+    ID INT PRIMARY KEY      NOT NULL,
+    EMAIL          char(50) NOT NULL,
+    HANDLE         char(50) NOT NULL
+);"
