@@ -4,20 +4,40 @@ minecraft_dir=../
 curr_user=`tail -n1 $minecraft_dir/white-list.txt`
 fd="$minecraft_dir/command_input"
 db='/tmp/chaincraft.db'
-spectator=""
+spectator="endofdays442"
+
+function cycle_user() {
+    local nextUser=$(sqlite3 "$db" "select * from users limit 1")
+    if test -z "$nextUser"; then return; fi
+
+    local userName=$(echo "$nextUser" | cut -d'|' -f3)
+    local userEmail=$(echo "$nextUser" | cut -d'|' -f2)
+    echo "Emailing $userName at $userEmail to come play."
+
+    echo "whitelist add $userName" > $fd
+    sqlite3 "$db" "delete from users where handle=\"$userName\""
+    sendmail -fnoreply@linode.jmatthews.us "$userEmail" << __ENDEMAIL__
+Your turn to play! Connect to linode.jmatthews.us:25565 to play chaincraft.
+__ENDEMAIL__
+}
 
 function process_line() {
     local user_end=0
 
-    if echo $1 | grep -i "$curr_user joined the game"
+    if echo $1 | grep -i "joined the game"
     then
+        local newUser=$(echo $1 | cut -d: -f4 | cut -d' ' -f2 | tr '[:upper:]' '[:lower:]')
+        if [ "$newUser" == "$spectator" ]; then return; fi
+        curr_user=$newUser
+        echo "Setting $newUser as the current user."
         echo "tp $spectator $curr_user" > $fd
         return
     fi
 
     # Detect if user has disconnected
-    if echo $1 | grep -i \"$curr_user left the game\"
+    if echo $1 | grep -i "$curr_user left the game"
     then
+        echo "$curr_user left, cycling to next in queue."
         local user_end=1
     fi
 
@@ -26,6 +46,7 @@ function process_line() {
     do
         if echo $1 | grep -i "$curr_user $text"
         then
+            echo "$curr_user died, cycling to next in queue."
             local user_end=1
             break
         fi
@@ -34,24 +55,15 @@ function process_line() {
     if [ $user_end -eq 1 ]
     then
         #Remove them from the whitelist
+        echo "Removing $curr_user from the whitelist and kicking."
         echo "whitelist remove $curr_user" > $fd
         echo "kick $curr_user Your turn is over. Thanks for playing" > $fd
-
-        local nextUser = $(sqlite3 "$db" "select * from users limit 1")
-        if test -z "$nextUser"; then return; fi
-
-        local userName = $(echo "$nextUser" | cut -d'|' -f3)
-        local userEmail = $(echo "$nextUser" | cut -d'|' -f2)
-
-        echo "whitelist add $userId" > $fd
-        sqlite3 "$db" "delete from users where handle=\"$userName\""
-        sendmail -fnoreply@linode.jmatthews.us "$userEmail" << __ENDEMAIL__
-Your turn to play! Connect to linode.jmatthews.us:25565 to play chaincraft.
-__ENDEMAIL__
+        cycle_user
     fi
 }
 
-tail -f $minecraft_dir/logs/latest.log | while read l
+cycle_user
+tail -n0 -f $minecraft_dir/logs/latest.log | while read l
 do
     process_line "$l"
 done
