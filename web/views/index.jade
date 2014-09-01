@@ -1,0 +1,17 @@
+doctype html
+
+html
+  head
+    title ChainWorld++
+
+  body
+    h1 Sign Up
+    form(action='/submit' method='post')
+      | Email:
+      input(type='text', name='email')
+      br
+      | Username:
+      input(type='text', name='username')
+      include recaptcha.html
+      br
+      input(type='submit', value='Sign up')
